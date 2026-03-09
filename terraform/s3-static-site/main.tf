@@ -30,6 +30,7 @@ resource "aws_s3_bucket" "site_bucket" {
     Project     = "Especializacao DevOps IFMT"
     ManagedBy   = "Terraform"
     Professor   = "Waldinei Bispo de Lima"
+    Aluno       = "Willem de Lima Ricardo"
   }
 }
 
