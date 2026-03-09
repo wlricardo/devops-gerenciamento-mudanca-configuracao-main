@@ -54,6 +54,7 @@ Este repositório contém **recursos complementares** da disciplina **"Gerenciam
 | **Período** | 16 de fevereiro a 17 de abril de 2026 |
 | **Carga Horária** | 60 horas (30h teórica + 30h prática) |
 | **Modalidade** | Educação a Distância (EAD) |
+| **Aluno** | Willem de Lima Ricardo |
 
 ---
 ## 📂 Estrutura do Repositório
