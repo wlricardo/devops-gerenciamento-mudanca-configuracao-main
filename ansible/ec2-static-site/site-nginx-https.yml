@@ -1,0 +1,104 @@
+---
+# ============================================================================
+# SITE-NGINX-HTTPS.YML - Playbook para Configurar HTTPS com Let's Encrypt
+# ============================================================================
+# Este playbook adiciona HTTPS (certificado Let's Encrypt) a um site Nginx
+# já configurado com HTTP.
+#
+# Presume que:
+# - O Nginx está instalado e rodando
+# - Os arquivos do site já foram copiados
+# - A porta 443 está aberta no Security Group
+# - O DNS está apontando para a máquina
+#
+# Variáveis:
+# - domain_name: Domínio do site (ex: site.esalabifmt.com.br)
+# - web_root: Diretório raiz dos arquivos (ex: /var/www/site.esalabifmt.com.br/html)
+# - admin_email: E-mail para avisos do Let's Encrypt (ALTERE PARA SEU E-MAIL)
+#
+# Como usar:
+# ansible-playbook -i hosts site-nginx-https.yml
+#
+# Documentação: https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html
+# ============================================================================
+
+- name: Configurar Servidor Nginx com HTTPS (Let's Encrypt )
+  hosts: webservers
+  become: yes
+  gather_facts: yes
+
+  # ========================================================================
+  # VARIÁVEIS DO PLAYBOOK
+  # ========================================================================
+  # IMPORTANTE: Altere admin_email para seu e-mail pessoal ou institucional
+  # O Let's Encrypt enviará avisos de renovação para este e-mail
+  # ========================================================================
+
+  vars:
+    domain_name: ColoqueAquiSeuDominio.com.br
+    web_root: /var/www/ColoqueAquiSeuDominio.com.br/html
+    nginx_user: www-data
+    nginx_group: www-data
+    admin_email: aluno@ifmt.edu.br  # ALTERE PARA SEU E-MAIL
+
+  # ========================================================================
+  # ROLES
+  # ========================================================================
+  # nginx-site-https: Instala Certbot, gera certificado e configura HTTPS
+  # ========================================================================
+
+  roles:
+    - nginx-site-https
+
+  # ========================================================================
+  # PÓS-TAREFAS: TESTES E RESUMO
+  # ========================================================================
+  # Testa o acesso HTTPS e exibe resumo da configuração
+  # ========================================================================
+
+  post_tasks:
+    - name: Testar acesso ao site via HTTPS
+      uri:
+        url: "https://{{ domain_name }}"
+        validate_certs: no
+        status_code: 200
+      register: https_test
+      ignore_errors: yes
+      tags:
+        - test
+
+    - name: Exibir resultado do teste HTTPS
+      debug:
+        msg: "✓ Site respondendo via HTTPS: {{ domain_name }}"
+      when: https_test.status == 200
+      tags:
+        - test
+
+    - name: Avisar se HTTPS não respondeu
+      debug:
+        msg: "⚠ HTTPS ainda não está respondendo. Verifique o certificado."
+      when: https_test.status != 200
+      tags:
+        - test
+
+    - name: Exibir resumo final
+      debug:
+        msg: |
+
+          ========================================
+          CONFIGURAÇÃO HTTPS CONCLUÍDA!
+          ========================================
+
+          Servidor: {{ inventory_hostname }}
+          Domínio: {{ domain_name }}
+
+          Acesse:
+          - HTTP (redireciona ): http://{{ domain_name }}
+          - HTTPS: https://{{ domain_name }}
+
+          Certificado Let's Encrypt ativado!
+          Renovação automática configurada.
+
+          ========================================
+      tags:
+        - summary

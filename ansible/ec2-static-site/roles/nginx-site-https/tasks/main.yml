@@ -1,0 +1,96 @@
+---
+# ============================================================================
+# TASKS/MAIN.YML - Tarefas da Role nginx-site-https
+# ============================================================================
+# Este arquivo contém apenas as tarefas necessárias para adicionar HTTPS
+# ao site já configurado com HTTP.
+# Presume que o Nginx e os arquivos já estão instalados.
+# ============================================================================
+
+# ============================================================================
+# SEÇÃO 1: INSTALAR CERTBOT
+# ============================================================================
+
+- name: Instalar Certbot e plugin Nginx
+  apt:
+    name:
+      - certbot
+      - python3-certbot-nginx
+    state: present
+  tags:
+    - certbot
+    - install
+
+# ============================================================================
+# SEÇÃO 2: GERAR CERTIFICADO COM LET'S ENCRYPT
+# ============================================================================
+# IMPORTANTE: Certbot vai tentar validar o domínio.
+# Certifique-se de que o DNS está apontando para a máquina.
+
+- name: Gerar certificado com Let's Encrypt
+  command: "certbot certonly --nginx -d {{ domain_name }} --non-interactive --agree-tos -m {{ admin_email }}"
+  register: certbot_result
+  changed_when: "'Successfully received certificate' in certbot_result.stdout"
+  failed_when: certbot_result.rc != 0 and 'already exists' not in certbot_result.stdout
+  tags:
+    - certbot
+    - https
+
+- name: Exibir resultado do Certbot
+  debug:
+    msg: "{{ certbot_result.stdout_lines }}"
+  tags:
+    - certbot
+    - https
+
+# ============================================================================
+# SEÇÃO 3: CRIAR CONFIGURAÇÃO NGINX (HTTPS)
+# ============================================================================
+# Cria nova configuração com HTTPS e redireciona HTTP para HTTPS
+
+- name: Criar configuração HTTPS do Nginx
+  template:
+    src: nginx-https.conf.j2
+    dest: "/etc/nginx/sites-available/{{ domain_name }}"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart nginx
+  tags:
+    - nginx
+    - config
+    - https
+
+# ============================================================================
+# SEÇÃO 4: VALIDAR CONFIGURAÇÃO
+# ============================================================================
+
+- name: Validar configuração HTTPS
+  command: nginx -t
+  register: nginx_https_test
+  changed_when: false
+  tags:
+    - nginx
+    - validate
+    - https
+
+- name: Exibir resultado da validação
+  debug:
+    var: nginx_https_test.stdout_lines
+  tags:
+    - nginx
+    - validate
+    - https
+
+# ============================================================================
+# SEÇÃO 5: CONFIGURAR RENOVAÇÃO AUTOMÁTICA
+# ============================================================================
+
+- name: Ativar renovação automática de certificados
+  systemd:
+    name: certbot.timer
+    state: started
+    enabled: yes
+  tags:
+    - certbot
+    - https

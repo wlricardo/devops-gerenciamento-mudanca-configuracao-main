@@ -1,0 +1,16 @@
+# ============================================================================
+# HOSTS - Inventário do Ansible
+# ============================================================================
+# Este arquivo define os hosts (máquinas) que o Ansible vai gerenciar.
+# Substitua IP_DA_INSTANCIA pelo IP público da instância EC2 criada.
+#
+# Documentação: https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html
+# ============================================================================
+
+[webservers]
+# IP da instância EC2 criada pelo Terraform
+site_nginx ansible_host=56.125.167.252 ansible_user=ubuntu ansible_ssh_private_key_file=../../ifmt-devops-iac.pem
+
+# Variáveis de grupo
+[webservers:vars]
+ansible_python_interpreter=/usr/bin/python3

@@ -1,0 +1,90 @@
+# ============================================================================
+# SITE-NGINX.YML - Playbook Principal
+# ============================================================================
+# Este playbook orquestra a configuração completa do servidor Nginx.
+# Executa a role nginx-site que realiza todas as tarefas necessárias.
+#
+# Documentação: https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html
+# ============================================================================
+
+---
+- name: Configurar Servidor Nginx com Site Customizado
+  hosts: webservers
+  become: yes
+  gather_facts: yes
+
+  # ========================================================================
+  # VARIÁVEIS DO PLAYBOOK
+  # ========================================================================
+  # Estas variáveis podem ser sobrescrita via linha de comando com -e
+  # Exemplo: ansible-playbook site-nginx.yml -e "domain_name=outro.com.br"
+  # ========================================================================
+  
+  vars:
+    domain_name: ColoqueAquiSeuDominio.com.br
+    web_root: /var/www/ColoqueAquiSeuDominio.com.br/html
+    nginx_user: www-data
+    nginx_group: www-data
+
+  # ========================================================================
+  # ROLES A EXECUTAR
+  # ========================================================================
+  # A role nginx-site contém todas as tarefas de configuração
+  # ========================================================================
+  
+  roles:
+    - nginx-site
+
+  # ========================================================================
+  # TAREFAS PÓS-EXECUÇÃO (POST_TASKS)
+  # ========================================================================
+  # Testes de validação após a configuração
+  # ========================================================================
+  
+  post_tasks:
+    - name: Testar acesso ao site via IP
+      uri:
+        url: "http://{{ ansible_host }}"
+        status_code: 200
+      register: ip_test
+      ignore_errors: yes
+
+    - name: Exibir resultado do teste via IP
+      debug:
+        msg: "✓ Site respondendo via IP: {{ ansible_host }}"
+      when: ip_test.status == 200
+
+    - name: Testar acesso ao site via domínio
+      uri:
+        url: "http://{{ domain_name }}"
+        status_code: 200
+      register: domain_test
+      ignore_errors: yes
+
+    - name: Exibir resultado do teste via domínio
+      debug:
+        msg: "✓ Site respondendo via domínio: {{ domain_name }}"
+      when: domain_test.status == 200
+
+    - name: Avisar se domínio não respondeu
+      debug:
+        msg: "⚠ Domínio {{ domain_name }} ainda não está respondendo. Aguarde propagação DNS."
+      when: domain_test.status != 200
+
+    - name: Exibir resumo final
+      debug:
+        msg: |
+          
+          ========================================
+          CONFIGURAÇÃO CONCLUÍDA COM SUCESSO!
+          ========================================
+          
+          Servidor: {{ inventory_hostname }}
+          Domínio: {{ domain_name }}
+          Raiz do Site: {{ web_root }}
+          
+          Acesse:
+          - Por IP: http://{{ ansible_host }}
+          - Por Domínio: http://{{ domain_name }}
+          
+          ========================================

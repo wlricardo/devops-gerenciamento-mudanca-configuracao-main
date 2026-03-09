@@ -1,0 +1,25 @@
+# ============================================================================
+# HANDLERS/MAIN.YML - Manipuladores de Eventos
+# ============================================================================
+# Handlers são tarefas que são executadas apenas quando notificadas.
+# Neste caso, reiniciam o Nginx apenas quando a configuração muda.
+#
+# Documentação: https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_handlers.html
+# ============================================================================
+
+---
+- name: restart nginx
+  systemd:
+    name: nginx
+    state: restarted
+  tags:
+    - nginx
+    - service
+
+- name: reload nginx
+  systemd:
+    name: nginx
+    state: reloaded
+  tags:
+    - nginx
+    - service

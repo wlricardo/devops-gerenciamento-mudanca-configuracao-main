@@ -1,0 +1,21 @@
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name {{ domain_name }} www.{{ domain_name }};
+
+    root {{ web_root }};
+
+    index index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    access_log /var/log/nginx/{{ domain_name }}_access.log;
+    error_log /var/log/nginx/{{ domain_name }}_error.log;
+
+    gzip on;
+    gzip_types text/plain text/css text/javascript application/json;
+    gzip_min_length 1000;
+}
